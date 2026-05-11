@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=MC Hosting
+Comment=Launch Minecraft Server Dashboard
+Exec=bash -c "cd \"$(dirname \"%k\")\"/core && ./start.sh"
+Icon=utilities-terminal
+Terminal=true
+Type=Application
+Categories=Game;Utility;

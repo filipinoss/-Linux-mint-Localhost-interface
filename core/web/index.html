@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC Panel</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- Login Overlay -->
+<div id="login-overlay" class="login-overlay">
+  <div class="login-panel">
+    <div class="login-header">
+      <svg class="login-logo" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="2" width="20" height="20" rx="4"/>
+        <path d="M7 2v20M17 2v20M2 7h20M2 17h20"/>
+      </svg>
+      <h2>MC Panel</h2>
+      <p>Sign in to manage your server</p>
+    </div>
+    <form id="login-form">
+      <div class="login-field">
+        <label>Username</label>
+        <input type="text" id="login-username" placeholder="username" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="password" autocomplete="current-password">
+      </div>
+      <div class="login-field hidden" id="login-confirm-field">
+        <label>Confirm Password</label>
+        <input type="password" id="login-confirm" placeholder="confirm password">
+      </div>
+      <div class="login-field" id="login-remember-field">
+        <label class="login-remember-label">
+          <input type="checkbox" id="login-remember" checked>
+          <span>Remember me</span>
+        </label>
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <button type="submit" class="btn btn-primary login-btn" id="login-submit">Sign In</button>
+      <div class="login-toggle">
+        <span class="login-toggle-text" id="login-toggle-text">No account?</span>
+        <button type="button" class="login-toggle-btn" id="login-toggle-btn">Create Account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Server Select Overlay -->
+<div id="server-select-overlay" class="login-overlay hidden">
+  <div class="login-panel" style="width:440px;max-height:80vh;overflow-y:auto;padding:24px">
+    <div class="login-header">
+      <h2>Select Server</h2>
+      <p>Choose which server to manage</p>
+    </div>
+    <div class="server-cards" id="server-select-list"></div>
+  </div>
+</div>
+
+<!-- iOS Nav Bar -->
+<nav class="nav-bar" id="nav-bar">
+  <div class="nav-left">
+    <div class="nav-avatar-wrap" id="nav-avatar-wrap">
+      <div class="nav-avatar" id="nav-avatar-btn">
+        <img id="nav-pfp" src="" alt="avatar">
+      </div>
+      <span class="nav-username" id="nav-username">—</span>
+      <div class="avatar-dropdown hidden" id="avatar-dropdown">
+        <button class="avatar-dd-item" data-action="create-account">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Create Account
+        </button>
+        <button class="avatar-dd-item" data-action="login-another">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Login With Another Account
+        </button>
+        <div class="avatar-dd-divider"></div>
+        <button class="avatar-dd-item avatar-dd-logout" data-action="logout">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </div>
+    <svg class="nav-logo" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="2" width="20" height="20" rx="4"/>
+      <path d="M7 2v20M17 2v20M2 7h20M2 17h20"/>
+    </svg>
+  </div>
+  <div class="nav-center">
+    <span class="nav-title" id="nav-title" title="Double-click to rename">MC Panel</span>
+    <input class="nav-title-input hidden" id="nav-title-input" maxlength="30">
+    <span class="nav-time" id="nav-time"></span>
+    <span class="nav-host" id="nav-host"></span>
+    <span class="nav-server-name" id="nav-server-name"></span>
+  </div>
+  <div class="nav-right"></div>
+</nav>
+
+<!-- Main Content -->
+<main class="content" id="content">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="view-dashboard" class="view active">
+    <h1 class="view-title">Dashboard</h1>
+    <div class="dashboard-layout">
+      <div class="dash-left">
+        <div class="dash-terminal-section">
+          <div class="dash-terminal-header">
+            <h3>Console</h3>
+            <div class="dash-console-controls">
+              <button class="btn btn-sm btn-start" id="console-start">Start</button>
+              <button class="btn btn-sm btn-stop" id="console-stop">Stop</button>
+              <button class="btn btn-sm btn-restart" id="console-restart">Restart</button>
+            </div>
+          </div>
+          <div class="dash-terminal-wrapper">
+            <div id="terminal"></div>
+          </div>
+          <div class="dash-console-input-row">
+            <input type="text" id="dash-console-input" placeholder="Type a command..." disabled>
+            <button class="btn btn-primary btn-sm" id="dash-console-send" disabled>Send</button>
+          </div>
+        </div>
+        <div class="dash-bottom-row">
+          <div class="players-section" id="players-section">
+            <div class="players-header">
+              <h3>Players Online</h3>
+              <span class="players-count" id="players-count">0</span>
+            </div>
+            <div class="players-list" id="players-list">
+              <span class="players-empty">No players online</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dash-right">
+        <div class="gauges-column">
+          <div class="gauge-card">
+            <svg class="gauge-svg" viewBox="0 0 120 120"><circle class="gauge-bg" cx="60" cy="60" r="50"/><circle class="gauge-fill" id="gauge-cpu" cx="60" cy="60" r="50" stroke-dasharray="314.159" stroke-dashoffset="0"/></svg>
+            <div class="gauge-label"><span class="gauge-value" id="cpu-value">0%</span><span class="gauge-title">CPU</span></div>
+            <span class="gauge-sub" id="cpu-cores">0 cores</span>
+          </div>
+          <div class="gauge-card">
+            <svg class="gauge-svg" viewBox="0 0 120 120"><circle class="gauge-bg" cx="60" cy="60" r="50"/><circle class="gauge-fill" id="gauge-mem" cx="60" cy="60" r="50" stroke-dasharray="314.159" stroke-dashoffset="0"/></svg>
+            <div class="gauge-label"><span class="gauge-value" id="mem-value">0%</span><span class="gauge-title">RAM</span></div>
+            <span class="gauge-sub" id="mem-detail">0 / 0 GB</span>
+          </div>
+          <div class="gauge-card">
+            <svg class="gauge-svg" viewBox="0 0 120 120"><circle class="gauge-bg" cx="60" cy="60" r="50"/><circle class="gauge-fill" id="gauge-disk" cx="60" cy="60" r="50" stroke-dasharray="314.159" stroke-dashoffset="0"/></svg>
+            <div class="gauge-label"><span class="gauge-value" id="disk-value">0%</span><span class="gauge-title">Disk</span></div>
+            <span class="gauge-sub" id="disk-detail">0 / 0 GB</span>
+          </div>
+        </div>
+        <div class="dash-info-cards">
+          <div class="info-card"><span class="info-label">Status</span><span class="info-value" id="dash-status">Checking...</span></div>
+          <div class="info-card"><span class="info-label">Uptime</span><span class="info-value" id="dash-uptime">-</span></div>
+          <div class="info-card"><span class="info-label">MC Version</span><span class="info-value">1.19.2 Forge</span></div>
+          <div class="info-card"><span class="info-label">Server Path</span><span class="info-value" id="dash-path">/pmsh</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FILES ===== -->
+  <div id="view-files" class="view">
+    <h1 class="view-title">Files</h1>
+    <div class="files-layout">
+      <aside class="file-tree" id="file-tree">
+        <div class="tree-header">
+          <span>Server Files</span>
+          <button class="btn btn-xs props-btn" id="props-btn" title="Edit server.properties">Props</button>
+          <button class="btn btn-xs props-btn" id="log-btn" title="View latest log">Log</button>
+        </div>
+        <div class="tree-list" id="tree-list"></div>
+      </aside>
+      <section class="file-editor">
+        <div class="editor-header" id="editor-header"><span>Select a file to edit</span></div>
+        <textarea class="editor-body" id="editor-body" spellcheck="false"></textarea>
+        <div class="editor-actions"><button class="btn btn-primary" id="editor-save">Save</button></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ===== BACKUPS ===== -->
+  <div id="view-backups" class="view">
+    <h1 class="view-title">Backups</h1>
+    <div class="backup-create-card">
+      <h3>Create Backup</h3>
+      <div class="backup-form">
+        <input type="text" id="backup-name" placeholder="Backup name..." maxlength="60" hidden>
+        <select id="backup-world"></select>
+        <button class="btn btn-primary" id="backup-create-btn">Create Backup</button>
+      </div>
+    </div>
+    <div class="backup-list-header">
+      <h3>Saved Backups</h3>
+      <span class="backup-count" id="backup-count">0</span>
+    </div>
+    <div class="backup-list" id="backup-list">
+      <div class="backup-empty">No backups yet.</div>
+    </div>
+  </div>
+
+  <!-- ===== SERVERS ===== -->
+  <div id="view-servers" class="view">
+    <h1 class="view-title">Servers</h1>
+    <div class="settings-section">
+      <h3>Manage Servers</h3>
+      <div class="servers-toolbar">
+        <button class="btn btn-primary btn-sm" id="server-add-btn">+ Add Server</button>
+      </div>
+      <div class="servers-list" id="servers-list"></div>
+    </div>
+    <div class="settings-section" id="server-add-section" style="display:none">
+      <h3>New Server</h3>
+      <div class="server-form">
+        <input type="text" id="sv-name" placeholder="Server name" class="sv-input">
+        <div class="sv-path-row">
+          <input type="text" id="sv-path" placeholder="Path to server files" class="sv-input">
+          <button class="btn btn-sm btn-primary" id="sv-browse-btn">Browse</button>
+        </div>
+        <input type="text" id="sv-starter" placeholder="Starter file (run.sh)" class="sv-input" value="run.sh">
+        <div class="sv-ram-row">
+          <input type="range" id="sv-ram" min="0" max="16384" step="512" value="4096">
+          <span id="sv-ram-display">4 GB</span>
+        </div>
+        <div class="server-form-actions">
+          <button class="btn btn-primary btn-sm" id="sv-save-btn">Save</button>
+          <button class="btn btn-sm" id="sv-cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Browser Overlay -->
+    <div id="fb-overlay" class="login-overlay hidden" style="z-index:9998">
+      <div class="login-panel" style="width:520px;max-height:70vh;overflow-y:auto;padding:24px">
+        <div class="login-header">
+          <h2>Select Folder</h2>
+          <p id="fb-current-path" style="font-size:12px;font-family:monospace;word-break:break-all">/</p>
+        </div>
+        <div id="fb-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px;min-height:100px"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-sm" id="fb-cancel-btn">Cancel</button>
+          <button class="btn btn-sm btn-primary" id="fb-select-btn" disabled>Select This Folder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN ===== -->
+  <div id="view-admin" class="view">
+    <h1 class="view-title">Admin Panel</h1>
+    <div class="admin-tabs">
+      <button class="btn btn-sm admin-tab active" data-adtab="users">Users</button>
+      <button class="btn btn-sm admin-tab" data-adtab="plan">Roadmap</button>
+    </div>
+    <div class="admin-tab-content active" data-adtab="users">
+      <div class="settings-section">
+        <h3>User Management</h3>
+        <div class="admin-table-wrap"><table class="admin-table" id="admin-table"><thead><tr><th>Username</th><th>Role</th><th>Registered</th><th>Permissions</th><th>Actions</th></tr></thead><tbody id="admin-tbody"></tbody></table></div>
+      </div>
+    </div>
+    <div class="admin-tab-content" data-adtab="plan">
+      <div class="settings-section plan-section"><h3>Roadmap</h3><div class="plan-content" id="plan-content">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS ===== -->
+  <div id="view-settings" class="view">
+    <h1 class="view-title">Settings</h1>
+
+    <div class="settings-section">
+      <h3>Appearance</h3>
+      <div class="settings-row">
+        <span class="settings-label">Panel Style</span>
+        <div class="settings-btn-group">
+          <button class="btn btn-sm style-btn" data-style="glass">Glass</button>
+          <button class="btn btn-sm style-btn" data-style="solid">Solid</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Custom Colors</span>
+        <button class="btn btn-sm settings-custom-btn" id="custom-colors-toggle">Open Picker</button>
+      </div>
+      <div class="custom-colors-panel hidden" id="custom-colors-panel">
+        <div class="custom-color-grid" id="custom-color-grid"></div>
+        <button class="btn btn-sm settings-reset-btn" id="custom-colors-reset">Reset to Theme</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Account</h3>
+      <div class="settings-row">
+        <span class="settings-label">Username</span>
+        <span class="settings-value" id="settings-username">admin</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Role</span>
+        <span class="settings-value" id="settings-role">Owner</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Wallpaper</span>
+        <div class="settings-wallpaper-upload">
+          <input type="file" id="wallpaper-input" accept="image/*" hidden>
+          <button class="btn btn-sm btn-primary" id="wallpaper-btn">Upload Wallpaper</button>
+          <button class="btn btn-sm" id="wallpaper-random-btn">Random</button>
+          <button class="btn btn-sm" id="wallpaper-remove-btn">Remove</button>
+          <span class="settings-value" id="wallpaper-name" style="font-size:11px;color:var(--surface2)"></span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">My Images</span>
+        <div class="settings-myimages-upload">
+          <input type="file" id="myimages-input" accept="image/*" hidden>
+          <button class="btn btn-sm btn-primary" id="myimages-upload-btn">Upload Image</button>
+        </div>
+      </div>
+      <div class="myimages-grid" id="myimages-grid">
+        <span class="myimages-empty">No images uploaded.</span>
+      </div>
+      <div class="settings-row">
+        <button class="btn btn-stop" id="settings-logout">Logout</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Server</h3>
+      <div class="settings-row">
+        <span class="settings-label">Active Server</span>
+        <span class="settings-value" id="settings-active-server">—</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Server Path</span>
+        <span class="settings-value mono" id="settings-server-path">/path/to/server</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Java Args</span>
+        <span class="settings-value mono" id="settings-java-args">-Xms1G -Xmx1G</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Tab Bar -->
+<nav class="tab-bar" id="tab-bar">
+  <button class="tab-item active" data-view="dashboard">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    <span class="tab-label">Dashboard</span>
+  </button>
+  <button class="tab-item" data-view="files">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+    <span class="tab-label">Files</span>
+  </button>
+  <button class="tab-item" data-view="backups">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+    <span class="tab-label">Backups</span>
+  </button>
+  <button class="tab-item" data-view="servers">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1" fill="currentColor"/><circle cx="6" cy="18" r="1" fill="currentColor"/></svg>
+    <span class="tab-label">Servers</span>
+  </button>
+  <button class="tab-item tab-item-admin hidden" data-view="admin">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span class="tab-label">Admin</span>
+  </button>
+  <button class="tab-item" data-view="settings">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    <span class="tab-label">Settings</span>
+  </button>
+</nav>
+
+<!-- Status Strip -->
+<div class="status-strip" id="status-strip">
+  <div class="status-strip-group">
+    <span class="strip-stat"><span class="strip-label">CPU</span><span class="strip-value mono" id="strip-cpu">0%</span></span>
+    <span class="strip-sep"></span>
+    <span class="strip-stat"><span class="strip-label">RAM</span><span class="strip-value mono" id="strip-ram">0/0 GB</span></span>
+    <span class="strip-sep"></span>
+    <span class="strip-stat"><span class="strip-label">MC CPU</span><span class="strip-value mono" id="strip-mc-cpu">OFF</span></span>
+    <span class="strip-sep"></span>
+    <span class="strip-stat"><span class="strip-label">MC RAM</span><span class="strip-value mono" id="strip-mc-ram">0 GB</span></span>
+  </div>
+  <div class="status-strip-group right">
+    <span class="strip-stat"><span class="strip-dot" id="strip-dot"></span><span class="strip-value" id="strip-status">Offline</span></span>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<script src="js/login.js"></script>
+<script src="js/console.js"></script>
+<script src="js/app.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/files.js"></script>
+<script src="js/backups.js"></script>
+<script src="js/settings.js"></script>
+</body>
+</html>
